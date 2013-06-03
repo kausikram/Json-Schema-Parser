@@ -16,7 +16,12 @@ var Field = function(name, type, fieldset) {
 	this.name = name;
 	this.label = name;
 	this.type = "text";
-	this.fieldset = fieldset || schemaParser.FIELDSET;
+	if (!fieldset){
+		this.html = jQuery("<input>").attr("type", "text").attr("placeholder", name);
+	}
+	else{
+		this.fieldset = fieldset || schemaParser.FIELDSET;
+	}
 };
 
 var dynoformStructure = function() {
@@ -111,11 +116,7 @@ schemaParser.prototype = {
 				e.preventDefault();
 				var _tiny_fragment = items;
 				var forms_created = {}
-				var dynoform_structure = new dynoformStructure();
-				dynoform_structure.form = new Form(root);
-				me.createForm(next_root, _tiny_fragment, dynoform_structure, forms_created);
-				if (!forms_created[next_root])
-					forms_created[next_root] = dynoform_structure;
+				me.createForm(next_root, _tiny_fragment, null, forms_created);
 				me.display(this.parentNode, forms_created, true);
 			});
 			forms_created[root] = button;
@@ -147,8 +148,13 @@ schemaParser.prototype = {
 			}
 
 		} else {
-			var field = new Field(root, _fragment.type, parent_dynoform.form.name);
-			parent_dynoform.fields.push(field);
+			if (parent_dynoform == null){
+				var field = new Field(root, _fragment.type);
+				forms_created[root] = field;
+			} else {
+				var field = new Field(root, _fragment.type, parent_dynoform.form.name);
+				parent_dynoform.fields.push(field);
+			}
 		}
 	},
 	display : function(hook, forms_created, indent){
@@ -160,9 +166,9 @@ schemaParser.prototype = {
 			else {
 				new_form = forms_created[form_name].html.clone(true);
 			}
-			if (indent)
+			if (indent){
 				new_form.addClass("indent");
-			
+			}
 			$(hook).append(new_form);
 		}
 	}
