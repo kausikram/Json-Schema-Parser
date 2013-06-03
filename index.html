@@ -1,0 +1,467 @@
+<html>
+	<head>
+		<link rel="stylesheet" href="jasmine/jasmine.css"/>
+		<link rel="stylesheet" href="style.css"/>
+		<link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
+	</head>
+	<body>
+		<div class="version" style="display:none">
+
+		</div>
+		<div id = "hello_div">
+
+		</div>
+	</body>
+</html>
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js" type="text/javascript"></script>
+<script src="jquery.dynoform.js" type="text/javascript"></script>
+<script src="json_schema_parser.js" type="text/javascript"></script>
+<script src="jasmine/jasmine.js" type="text/javascript"></script>
+<script src="jasmine/jasmine-html.js" type="text/javascript"></script>
+<script src="test_reporter.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+	var test_meta_schema = {
+		"Condition" : {
+			"title" : "Condition",
+			"properties" : {
+				"Name" : {
+					"type" : "string"
+				}
+			},
+			"type" : "object"
+		},
+		"Service" : {
+			"title" : "Service",
+			"properties" : {
+				"Name" : {
+					"type" : "string"
+				},
+				"Description" : {
+					"type" : "string"
+				},
+				"Model|Service" : {
+					"items" : {
+						"$ref" : "#/Model"
+					},
+					"type" : "array"
+				},
+				"Method|Service" : {
+					"items" : {
+						"$ref" : "#/Method"
+					},
+					"type" : "array"
+				}
+			},
+			"type" : "object"
+		},
+		"Model" : {
+			"title" : "Model",
+			"properties" : {
+				"Name" : {
+					"type" : "string"
+				},
+				"ProcessDefinition|Model" : {
+					"items" : {
+						"$ref" : "#/ProcessDefinition"
+					},
+					"type" : "array"
+				},
+				"Attribute|Model" : {
+					"items" : {
+						"$ref" : "#/Attribute"
+					},
+					"type" : "array"
+				}
+			},
+			"type" : "object"
+		},
+		"Formula" : {
+			"title" : "Formula",
+			"properties" : {
+				"Name" : {
+					"type" : "string"
+				},
+				"Node|Formula" : {
+					"items" : {
+						"$ref" : "#/Node"
+					},
+					"type" : "array"
+				}
+			},
+			"type" : "object"
+		},
+		"Method" : {
+			"title" : "Method",
+			"properties" : {
+				"Name" : {
+					"type" : "string"
+				},
+				"Description" : {
+					"type" : "string"
+				}
+			},
+			"type" : "object"
+		},
+		"$ref" : "#/Project",
+		"FlowNode" : {
+			"title" : "FlowNode",
+			"properties" : {
+				"Name" : {
+					"type" : "string"
+				},
+				"Documentation" : {
+					"type" : "string"
+				},
+				"Type" : {
+					"type" : "string"
+				},
+				"NodeType" : {
+					"type" : "string"
+				},
+				"Role" : {
+					"type" : "string"
+				},
+				"Formula|FlowNode" : {
+					"items" : {
+						"$ref" : "#/Formula"
+					},
+					"type" : "array"
+				},
+				"ProcessDefinition|FlowNode" : {
+					"items" : {
+						"$ref" : "#/ProcessDefinition"
+					},
+					"type" : "array"
+				}
+			},
+			"type" : "object"
+		},
+		"Criteria" : {
+			"title" : "Criteria",
+			"properties" : {
+				"Name" : {
+					"type" : "string"
+				}
+			},
+			"type" : "object"
+		},
+		"ProcessDefinition" : {
+			"title" : "ProcessDefinition",
+			"properties" : {
+				"Name" : {
+					"type" : "string"
+				},
+				"ProcessType" : {
+					"type" : "string"
+				},
+				"Documentation" : {
+					"type" : "string"
+				},
+				"FlowNode|ProcessDefinition" : {
+					"items" : {
+						"$ref" : "#/FlowNode"
+					},
+					"type" : "array"
+				}
+			},
+			"type" : "object"
+		},
+		"$schema" : "",
+		"Node" : {
+			"title" : "Node",
+			"properties" : {
+				"Name" : {
+					"type" : "string"
+				},
+				"DoubleValue" : {
+					"type" : "number"
+				},
+				"Type" : {
+					"type" : "string"
+				},
+				"Node|Node" : {
+					"items" : {
+						"$ref" : "#/Node"
+					},
+					"type" : "array"
+				},
+				"StringValue" : {
+					"type" : "string"
+				}
+			},
+			"type" : "object"
+		},
+		"Attribute" : {
+			"title" : "Attribute",
+			"properties" : {
+				"Name" : {
+					"type" : "string"
+				},
+				"Category" : {
+					"type" : "string"
+				},
+				"Format" : {
+					"type" : "string"
+				},
+				"Formula|Attribute" : {
+					"items" : {
+						"$ref" : "#/Formula"
+					},
+					"type" : "array"
+				},
+				"CharacterLength" : {
+					"Format" : "####",
+					"type" : "number"
+				},
+				"IsString" : {
+					"Format" : "True/False",
+					"type" : "boolean"
+				},
+				"DefaultValue" : {
+					"type" : "string"
+				},
+				"IsCascade" : {
+					"Format" : "True/False",
+					"type" : "boolean"
+				}
+			},
+			"type" : "object"
+		},
+		"Project" : {
+			"title" : "Project",
+			"properties" : {
+				"Name" : {
+					"type" : "string"
+				},
+				"Description" : {
+					"type" : "string"
+				},
+				"Service|Project" : {
+					"items" : {
+						"$ref" : "#/Service"
+					},
+					"type" : "array"
+				},
+				"Model|Project" : {
+					"items" : {
+						"$ref" : "#/Model"
+					},
+					"type" : "array"
+				}
+			},
+			"type" : "object"
+		}
+	};
+	var simple_schema = {
+		"$schema" : "http://json-schema.org/draft-04/schema#",
+		"title" : "Product set",
+		"type" : "array",
+		"items" : {
+			"title" : "Product",
+			"type" : "object",
+			"properties" : {
+				"id" : {
+					"description" : "The unique identifier for a product",
+					"type" : "number"
+				},
+				"name" : {
+					"type" : "string"
+				},
+				"price" : {
+					"type" : "number",
+					"minimum" : 0,
+					"exclusiveMinimum" : true
+				},
+				"tags" : {
+					"type" : "array",
+					"items" : {
+						"type" : "string"
+					},
+					"minItems" : 1,
+					"uniqueItems" : true
+				},
+				"dimensions" : {
+					"type" : "object",
+					"properties" : {
+						"length" : {
+							"type" : "number"
+						},
+						"width" : {
+							"type" : "number"
+						},
+						"height" : {
+							"type" : "number"
+						}
+					},
+					"required" : ["length", "width", "height"]
+				},
+				"warehouseLocation" : {
+					"description" : "Coordinates of the warehouse with the product",
+					"$ref" : "#/definitions/geo"
+				},
+				"subProduct" : {
+					"description" : "Coordinates of the warehouse with the product",
+					"items" : {
+						"$ref" : "#"
+					}
+				}
+			},
+			"required" : ["id", "name", "price"]
+		},
+		"definitions" : {
+			"geo" : {
+				"description" : "A geographical coordinate",
+				"type" : "object",
+				"properties" : {
+					"latitude" : {
+						"type" : "number"
+					},
+					"longitude" : {
+						"type" : "number"
+					}
+				}
+			}
+		}
+	};
+	var test_json = {
+		"$schema" : "http://json-schema.org/draft-04/schema#",
+		"title" : "Product set",
+		"type" : "object",
+		"properties" : {
+			"nfs-name" : {
+				"type" : "string"
+			},
+			"self" : {
+				"type" : "string"
+			},
+			"another_object" : {
+				"properties" : {
+					"name" : {
+						"type" : "string"
+					}
+				}
+			},
+			"ref_object" : {
+				"$ref" : "#"
+			}
+		},
+		"definitions" : {
+			"location" : {
+				"properties" : {
+					"latitude" : {
+						"type" : "string"
+					}
+				}
+			}
+		}
+	};
+
+	var advanced_schema = {
+		"id" : "http://some.site.somewhere/entry-schema#",
+		"$schema" : "http://json-schema.org/draft-04/schema#",
+		"description" : "schema for an fstab entry",
+		"type" : "object",
+		"required" : ["storage"],
+		"properties" : {
+			"storage" : {
+				"type" : "object",
+				"oneOf" : [{
+					"$ref" : "#/definitions/diskDevice"
+				}, {
+					"$ref" : "#/definitions/diskUUID"
+				}, {
+					"$ref" : "#/definitions/nfs"
+				}, {
+					"$ref" : "#/definitions/tmpfs"
+				}]
+			},
+			"fstype" : {
+				"type" : "string",
+				"enum" : ["ext3", "ext4", "btrfs"]
+			},
+			"options" : {
+				"type" : "array",
+				"minItems" : 1,
+				"items" : {
+					"type" : "string"
+				},
+				"uniqueItems" : true
+			},
+			"readonly" : {
+				"type" : "boolean"
+			}
+		},
+		"definitions" : {
+			"diskDevice" : {
+				"properties" : {
+					"type" : {
+						"enum" : ["disk"]
+					},
+					"device" : {
+						"type" : "string",
+						"pattern" : "^/dev/[^/]+(/[^/]+)*$"
+					}
+				},
+				"required" : ["type", "device"],
+				"additionalProperties" : false
+			},
+			"diskUUID" : {
+				"properties" : {
+					"type" : {
+						"enum" : ["disk"]
+					},
+					"label" : {
+						"type" : "string",
+						"pattern" : "^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$"
+					}
+				},
+				"required" : ["type", "label"],
+				"additionalProperties" : false
+			},
+			"nfs" : {
+				"properties" : {
+					"type" : {
+						"enum" : ["nfs"]
+					},
+					"remotePath" : {
+						"type" : "string",
+						"pattern" : "^(/[^/]+)+$"
+					},
+					"server" : {
+						"type" : "string",
+						"oneOf" : [{
+							"format" : "host-name"
+						}, {
+							"format" : "ipv4"
+						}, {
+							"format" : "ipv6"
+						}]
+					}
+				},
+				"required" : ["type", "server", "remotePath"],
+				"additionalProperties" : false
+			},
+			"tmpfs" : {
+				"properties" : {
+					"type" : {
+						"enum" : ["tmpfs"]
+					},
+					"sizeInMB" : {
+						"type" : "integer",
+						"minimum" : 16,
+						"maximum" : 512
+					}
+				},
+				"required" : ["type", "sizeInMB"],
+				"additionalProperties" : false
+			}
+		}
+	}
+
+	$(document).ready(function() {
+		var json_to_render = test_meta_schema;
+		schema_parser = new schemaParser(json_to_render, "Project");
+	})
+</script>
