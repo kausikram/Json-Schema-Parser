@@ -146,32 +146,26 @@ schemaParser.prototype = {
 		
 		//OrangeScape specific
 		root = root.split("|")[0];
-
 		if (!_fragment.type) {
 			recognized_type = this.getFormType(_fragment);
 		} else {
 			recognized_type = _fragment.type;
 		}
-
+		
 		if (recognized_type == schemaParser.ARRAY) {
-			
 			var items;
 			if (!_fragment.items) {
 				throw new Error("Please check your Schema");
 			}
 			var button = this.__createArrayButton__(_fragment, items, next_root, root);
 			forms_created[root] = button;
-			
 		} else if (recognized_type == schemaParser.OBJECT) {
-			
 			if (_fragment.$ref) {
 				forms_created[root] = this.__handleObjectRef__(_fragment, next_root, root);
 			} else {
 				forms_created[root] = this.__createDynoformStructure__(_fragment, root, next_root, forms_created);
 			}
-
 		} else {
-			
 			if (parent_dynoform == null){
 				var field = new Field(root, _fragment.type);
 				forms_created[root] = field;
@@ -179,9 +173,9 @@ schemaParser.prototype = {
 				var field = new Field(root, _fragment.type, parent_dynoform.form.name);
 				parent_dynoform.fields.push(field);
 			}
-			
 		}
 	},
+	
 	display : function(hook, forms_created, indent){
 		for (var form_name in forms_created){
 			var new_form;
