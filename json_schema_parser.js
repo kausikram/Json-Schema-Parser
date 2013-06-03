@@ -82,6 +82,62 @@ schemaParser.prototype = {
 
 		return type;
 	},
+	
+	__addArrayButtonHandler__ : function(button, items, next_root){
+		var me = this;
+		$(button.html.find("button")).on("click", function(e) {
+			e.preventDefault();
+			var _tiny_fragment = items;
+			var forms_created = {}
+			me.createForm(next_root, _tiny_fragment, null, forms_created);
+			me.display(this.parentNode, forms_created, true);
+		});
+	},
+	
+	__createArrayButton__ : function(_fragment, items, next_root, root){
+		var button;
+		if (_fragment.items.$ref) {
+			var ref_path_parts = _fragment.items.$ref.split("/");
+			items = this.getRefSchema(ref_path_parts);
+			next_root = ref_path_parts[ref_path_parts.length - 1];
+			button = new Button(root);
+		} else {
+			items = _fragment.items;
+			next_root = items.title || root || "Items";
+			button = new Button(next_root);
+		}
+		this.__addArrayButtonHandler__(button, items, next_root);
+		return button;
+	},
+	
+	__handleObjectRef__ : function(_fragment, next_root, root){
+		var me = this;
+		var ref_path_parts = _fragment.$ref.split("/");
+		next_root = ref_path_parts[ref_path_parts.length - 1];
+		var button = new Button(root);
+		$(button.html.find("button")).on("click", function(e) {
+			e.preventDefault();
+			var _tiny_fragment = me.getRefSchema(ref_path_parts);
+			var forms_created = {}
+			me.createForm(next_root, _tiny_fragment, null, forms_created);
+			me.display(this.parentNode, forms_created, false);
+			this.parentNode.children[0].remove();
+		});
+		return button;
+	},
+	
+	__createDynoformStructure__ : function(_fragment, root, next_root, forms_created){
+		var dynoform_structure = new dynoformStructure();
+		dynoform_structure.form = new Form(root);
+		var new_field_set = [[root, root, {}]];
+		dynoform_structure.fieldsets = new_field_set;
+		var properties = _fragment.properties;
+		for (var prop in properties) {
+			next_root = prop;
+			this.createForm(next_root, properties[prop], dynoform_structure, forms_created);
+		}
+		return dynoform_structure;
+	},
 
 	createForm : function(root, _fragment, parent_dynoform, forms_created) {
 		var next_root;
@@ -98,56 +154,24 @@ schemaParser.prototype = {
 		}
 
 		if (recognized_type == schemaParser.ARRAY) {
+			
 			var items;
 			if (!_fragment.items) {
 				throw new Error("Please check your Schema");
 			}
-			if (_fragment.items.$ref) {
-				var ref_path_parts = _fragment.items.$ref.split("/");
-				items = me.getRefSchema(ref_path_parts);
-				next_root = ref_path_parts[ref_path_parts.length - 1];
-				button = new Button(root);
-			} else {
-				items = _fragment.items;
-				next_root = items.title || root || "Items";
-				button = new Button(next_root);
-			}
-			$(button.html.find("button")).on("click", function(e) {
-				e.preventDefault();
-				var _tiny_fragment = items;
-				var forms_created = {}
-				me.createForm(next_root, _tiny_fragment, null, forms_created);
-				me.display(this.parentNode, forms_created, true);
-			});
+			var button = this.__createArrayButton__(_fragment, items, next_root, root);
 			forms_created[root] = button;
+			
 		} else if (recognized_type == schemaParser.OBJECT) {
+			
 			if (_fragment.$ref) {
-				var ref_path_parts = _fragment.$ref.split("/");
-				next_root = ref_path_parts[ref_path_parts.length - 1];
-				var button = new Button(root);
-				$(button.html.find("button")).on("click", function(e) {
-					e.preventDefault();
-					var _tiny_fragment = me.getRefSchema(ref_path_parts);
-					var forms_created = {}
-					me.createForm(next_root, _tiny_fragment, null, forms_created);
-					me.display(this.parentNode, forms_created, false);
-					this.parentNode.children[0].remove();
-				});
-				forms_created[root] = button;
+				forms_created[root] = this.__handleObjectRef__(_fragment, next_root, root);
 			} else {
-				var dynoform_structure = new dynoformStructure();
-				dynoform_structure.form = new Form(root);
-				var new_field_set = [[root, root, {}]];
-				dynoform_structure.fieldsets = new_field_set;
-				var properties = _fragment.properties;
-				for (var prop in properties) {
-					next_root = prop;
-					this.createForm(next_root, properties[prop], dynoform_structure, forms_created);
-				}
-				forms_created[root] = dynoform_structure;
+				forms_created[root] = this.__createDynoformStructure__(_fragment, root, next_root, forms_created);
 			}
 
 		} else {
+			
 			if (parent_dynoform == null){
 				var field = new Field(root, _fragment.type);
 				forms_created[root] = field;
@@ -155,6 +179,7 @@ schemaParser.prototype = {
 				var field = new Field(root, _fragment.type, parent_dynoform.form.name);
 				parent_dynoform.fields.push(field);
 			}
+			
 		}
 	},
 	display : function(hook, forms_created, indent){
