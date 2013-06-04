@@ -181,6 +181,15 @@ schemaParser.prototype = {
 		}
 		return dynoform_structure;
 	},
+	
+	//if the field names need any pre processing before being rendered
+	//override this function.
+	//as of now, OS spec sends in fields in a <child> | <parent> format
+	//this function process to extract just the child's name
+	__processRootName__ : function(root){
+		var root = root.split("|")[0];
+		return root;
+	},
 
 	createForm : function(root, _fragment, parent_dynoform, forms_created, form_order, path) {
 		var next_root;
@@ -192,11 +201,11 @@ schemaParser.prototype = {
 
 		}
 
+		root = this.__processRootName__(root);
+	
 		if (path != "#")
 			path += root;
-
-		//OrangeScape specific
-		root = root.split("|")[0];
+		
 		if (!_fragment.type) {
 			recognized_type = this.getFormType(_fragment);
 		} else {
