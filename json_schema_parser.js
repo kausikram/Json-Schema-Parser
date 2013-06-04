@@ -12,16 +12,22 @@ var Form = function(name, id) {
 	this.action = "";
 };
 
-var Field = function(name, type, fieldset) {
+var Field = function(name, type, fieldset, options) {
 	this.name = name;
 	this.label = name;
-	this.type = "text";
-	if (!fieldset){
-		this.html = jQuery("<input>").attr("type", "text").attr("placeholder", name);
+	if (typeof(type) === "undefined")
+		throw new Error("Cannot detect type of the field");
+	if (type == "string" || type == "number")
+		type = "text";
+	this.type = type;
+	if (typeof(options) !== "undefined"){
+		this.options = [];
+		for (var i=0; i<options.length; i++){
+			var option_structure = [options[i], i];
+			this.options.push(option_structure);
+		}
 	}
-	else{
-		this.fieldset = fieldset || schemaParser.FIELDSET;
-	}
+	this.fieldset = fieldset || schemaParser.FIELDSET;
 };
 
 var dynoformStructure = function() {
@@ -49,8 +55,9 @@ schemaParser.prototype = {
 		this.root_type = json.type || this.getFormType(json);
 		this.root = form_name || json.title;
 		var forms_created = {};
-		this.createForm(this.root, json, null, forms_created);
-		this.display("#hello_div" , forms_created, false);
+		var form_order = [];
+		this.createForm(this.root, json, null, forms_created, form_order);
+		this.display("#hello_div" , forms_created, form_order, false);
 	},
 
 	getRefSchema : function(ref_path_parts) {
@@ -83,15 +90,32 @@ schemaParser.prototype = {
 		return type;
 	},
 	
-	__addArrayButtonHandler__ : function(button, items, next_root){
+	__addArrayButtonHandler__ : function(button, items, next_root, root){
 		var me = this;
 		$(button.html.find("button")).on("click", function(e) {
 			e.preventDefault();
 			var _tiny_fragment = items;
-			var forms_created = {}
-			me.createForm(next_root, _tiny_fragment, null, forms_created);
-			me.display(this.parentNode, forms_created, true);
+			var forms_created = {};
+			var form_order = [];
+			var parent_dynoform = null;
+			var _is_headless_form = me.__detectHeadlessForm__(_tiny_fragment);
+			if (_is_headless_form){
+				parent_dynoform = me.__initDynoform__(root, "");
+			}
+			me.createForm(next_root, _tiny_fragment, parent_dynoform, forms_created, form_order);
+			if (!forms_created[next_root]){
+				form_order.push(next_root);
+				forms_created[next_root] = parent_dynoform;
+			}
+			me.display(this.parentNode, forms_created, form_order, true);
 		});
+	},
+	__detectHeadlessForm__ : function(_fragment){
+		var type = _fragment.type || this.getFormType(_fragment);
+		if (type != "array" && type != "object"){
+			return true;
+		}
+		return false;
 	},
 	
 	__createArrayButton__ : function(_fragment, items, next_root, root){
@@ -106,7 +130,7 @@ schemaParser.prototype = {
 			next_root = items.title || root || "Items";
 			button = new Button(next_root);
 		}
-		this.__addArrayButtonHandler__(button, items, next_root);
+		this.__addArrayButtonHandler__(button, items, next_root, root);
 		return button;
 	},
 	
@@ -118,28 +142,34 @@ schemaParser.prototype = {
 		$(button.html.find("button")).on("click", function(e) {
 			e.preventDefault();
 			var _tiny_fragment = me.getRefSchema(ref_path_parts);
-			var forms_created = {}
-			me.createForm(next_root, _tiny_fragment, null, forms_created);
-			me.display(this.parentNode, forms_created, false);
+			var forms_created = {};
+			var form_order = [];
+			me.createForm(next_root, _tiny_fragment, null, forms_created, form_order);
+			me.display(this.parentNode, forms_created, form_order, false);
 			this.parentNode.children[0].remove();
 		});
 		return button;
 	},
 	
-	__createDynoformStructure__ : function(_fragment, root, next_root, forms_created){
+	__initDynoform__ : function(root, fieldset_title){
 		var dynoform_structure = new dynoformStructure();
 		dynoform_structure.form = new Form(root);
-		var new_field_set = [[root, root, {}]];
+		var new_field_set = [[(typeof(fieldset_title) !== "undefined") ? fieldset_title : root, root, {}]];
 		dynoform_structure.fieldsets = new_field_set;
+		return dynoform_structure;
+	},
+	
+	__createDynoformStructure__ : function(_fragment, root, next_root, forms_created, form_order){
+		var dynoform_structure = this.__initDynoform__(root, root);
 		var properties = _fragment.properties;
 		for (var prop in properties) {
 			next_root = prop;
-			this.createForm(next_root, properties[prop], dynoform_structure, forms_created);
+			this.createForm(next_root, properties[prop], dynoform_structure, forms_created, form_order);
 		}
 		return dynoform_structure;
 	},
 
-	createForm : function(root, _fragment, parent_dynoform, forms_created) {
+	createForm : function(root, _fragment, parent_dynoform, forms_created, form_order) {
 		var next_root;
 		var me = this;
 		var recognized_type;
@@ -158,27 +188,36 @@ schemaParser.prototype = {
 				throw new Error("Please check your Schema");
 			}
 			var button = this.__createArrayButton__(_fragment, items, next_root, root);
+			form_order.push(root);
 			forms_created[root] = button;
 		} else if (recognized_type == schemaParser.OBJECT) {
 			if (_fragment.$ref) {
+				form_order.push(root);
 				forms_created[root] = this.__handleObjectRef__(_fragment, next_root, root);
 			} else {
-				forms_created[root] = this.__createDynoformStructure__(_fragment, root, next_root, forms_created);
+				form_order.push(root);
+				forms_created[root] = this.__createDynoformStructure__(_fragment, root, next_root, forms_created, form_order);
 			}
 		} else {
-			if (parent_dynoform == null){
-				var field = new Field(root, _fragment.type);
-				forms_created[root] = field;
-			} else {
-				var field = new Field(root, _fragment.type, parent_dynoform.form.name);
-				parent_dynoform.fields.push(field);
+			var type = _fragment.type;
+			var options;
+			if (_fragment.type == "boolean"){
+				type = "radio";
+				options = ["true", "false"];
 			}
+			if (_fragment.enum){
+				type = "select";
+				options = _fragment.enum;
+			}
+			var field = new Field(root, type, parent_dynoform.form.name, options);
+			parent_dynoform.fields.push(field);
 		}
 	},
 	
-	display : function(hook, forms_created, indent){
-		for (var form_name in forms_created){
+	display : function(hook, forms_created, form_order, indent){
+		for (var i=0; i<form_order.length; i++){
 			var new_form;
+			var form_name = form_order[i];
 			if (forms_created[form_name] instanceof dynoformStructure){
 				new_form = $("<div>").dynoForm(forms_created[form_name]).clone(true);
 			}
