@@ -1,0 +1,3 @@
+[submodule "dynoform"]
+	path = dynoform
+	url = git@github.com:kausikram/jquery.dynoform.git
