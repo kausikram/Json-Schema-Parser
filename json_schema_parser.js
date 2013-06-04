@@ -54,10 +54,6 @@ schemaParser.prototype = {
 		this.schema = json;
 		this.root_type = json.type || this.getFormType(json);
 		this.root = form_name || json.title;
-		var forms_created = {};
-		var form_order = [];
-		this.createForm(this.root, json, null, forms_created, form_order, "#");
-		this.display("#hello_div", forms_created, form_order, false);
 	},
 
 	getRefSchema : function(ref_path_parts) {

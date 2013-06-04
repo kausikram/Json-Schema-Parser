@@ -1,6 +1,7 @@
 <html>
 	<head>
 		<link rel="stylesheet" href="style.css"/>
+		<link rel="stylesheet" href="jasmine/jasmine.css"/>
 		<link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.1/css/bootstrap-combined.min.css" rel="stylesheet">
 	</head>
 	<body>
@@ -459,5 +460,13 @@
 	$(document).ready(function() {
 		var json_to_render = test_meta_schema;
 		schema_parser = new schemaParser(json_to_render, "Project");
+		var forms_created = {};
+		var form_order = [];
+		schema_parser.createForm(schema_parser.root, json_to_render, null, forms_created, form_order, "#");
+		schema_parser.display("#hello_div", forms_created, form_order, false);
 	})
 </script>
+
+<script src="jasmine/jasmine.js" type="text/javascript"></script>
+<script src="jasmine/jasmine-html.js" type="text/javascript"></script>
+<script src="test_reporter.js" type="text/javascript"></script>
