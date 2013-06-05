@@ -69,15 +69,7 @@ describe("schemaParser", function() {
 				"title" : "FileSystem",
 				"properties" : {
 					"storage" : {
-						"type" : "object",
-						"properties" : {
-							"type" : {
-								"type" : "string"
-							},
-							"remotePath" : {
-								"type" : "string"
-							}
-						}
+						"type" : "string",
 					}
 				}
 			};
@@ -92,17 +84,10 @@ describe("schemaParser", function() {
 			var json = {
 				"$schema" : "http://json-schema.org/draft-04/schema#",
 				"title" : "FileSystem",
-				"properties" : {
-					"storage" : {
-						"items" : {
-							"properties" : {
-								"type" : {
-									"type" : "string"
-								},
-								"remotePath" : {
-									"type" : "string"
-								}
-							}
+				"items" : {
+					"properties" : {
+						"type" : {
+							"type" : "string"
 						}
 					}
 				}
@@ -110,7 +95,7 @@ describe("schemaParser", function() {
 			schema_parser = new schemaParser(json);
 			forms_created = {};
 			form_order = [];
-			var type = schema_parser.getFormType(json["properties"]["storage"]);
+			var type = schema_parser.getFormType(json);
 			expect(type).toEqual("array");
 		});
 
@@ -119,26 +104,11 @@ describe("schemaParser", function() {
 				"$schema" : "http://json-schema.org/draft-04/schema#",
 				"title" : "FileSystem",
 				"properties" : {
-					"storage" : {
-						"items" : {
-							"$ref" : "#/definitions/storage_array"
-						}
-					},
 					"time" : {
 						"$ref" : "#/definitions/time_object"
 					}
 				},
 				"definitions" : {
-					"storage_array" : {
-						"properties" : {
-							"type" : {
-								"type" : "string"
-							},
-							"remotePath" : {
-								"type" : "string"
-							}
-						}
-					},
 					"time_object" : {
 						"properties" : {
 							"day" : {
@@ -151,9 +121,7 @@ describe("schemaParser", function() {
 			schema_parser = new schemaParser(json);
 			forms_created = {};
 			form_order = [];
-			var type = schema_parser.getFormType(json["properties"]["storage"]);
-			expect(type).toEqual("array");
-			type = schema_parser.getFormType(json["properties"]["time"]);
+			var type = schema_parser.getFormType(json["properties"]["time"]);
 			expect(type).toEqual("object");
 		});
 
@@ -164,19 +132,10 @@ describe("schemaParser", function() {
 				"properties" : {
 					"storage" : {
 					}
-				},
-				"definitions" : {
-					"nfs" : {
-						"properties" : {
-							"type" : {
-								"type" : "string"
-							}
-						}
-					}
 				}
 			};
 
-			var schema_parser = new schemaParser(json)
+			var schema_parser = new schemaParser(json);
 			expect(function() {
 				schema_parser.getFormType(json.properties.storage)
 			}).toThrow(new Error("Cannot determine type of form"));
@@ -221,297 +180,351 @@ describe("schemaParser", function() {
 		});
 	});
 
+	describe("schemaParser __initDynoform__", function() {
+		it("should return an instance of dynoformStructure", function() {
+			var _fragment = {
+				"$schema" : "http://json-schema.org/draft-04/schema#",
+				"title" : "FileSystem",
+				"properties" : {
+					"storage" : {
+						"type" : "string"
+					}
+				}
+			};
+			var next_root;
+			var forms_created = {};
+			var form_order = [];
+			path = "#";
+			var schema_parser = new schemaParser(_fragment);
+			var dynoform_structure = schema_parser.__initDynoform__(schema_parser.root, schema_parser.root);
+			expect( dynoform_structure instanceof dynoformStructure).toBeTruthy();
+		});
+	});
+
+	describe("schemaParser __detectHeadlessForm__", function() {
+		it("should detect array types that do not have objects as items but a single field", function() {
+			//this is to create dynoforms with no fieldset heading so that only the field is rendered
+			//instead of along with a fieldset heading
+			var json = {
+				"$schema" : "http://json-schema.org/draft-04/schema#",
+				"title" : "FileSystem",
+				"type" : "array",
+				"items" : {
+					"type" : "string"
+				}
+
+			};
+			var _is_headless_form = new schemaParser(json).__detectHeadlessForm__(json.items);
+			expect(_is_headless_form).toBeTruthy();
+		});
+	});
+
+	describe("schemaParser __arrayButtonHandler__", function() {
+		it("should create the appropriate forms", function() {
+			var json = {
+				"$schema" : "http://json-schema.org/draft-04/schema#",
+				"title" : "FileSystem",
+				"type" : "array",
+				"items" : {
+					"type" : "string"
+				}
+
+			};
+			var schema_parser = new schemaParser(json, "FileSystem");
+			var forms_created = {};
+			var form_order = [];
+
+			var items = json.items;
+			var next_root = "FileSystem";
+			var root = next_root;
+			var path = "#";
+			var button_div = new Button(root).html;
+			button = $(button_div).find("button");
+			schema_parser.__arrayButtonHandler__(button, $.Event("click"), items, next_root, root, path);
+			expect($(button_div).find("input").length).toEqual(1);
+			expect(button.html()).toEqual("FileSystem");
+		});
+	});
+
+	describe("schemaParser __createArrayButton__", function() {
+		it("should create a button with the button text as json root title for a json schema of type array", function() {
+			var json = {
+				"$schema" : "http://json-schema.org/draft-04/schema#",
+				"title" : "FileSystem",
+				"type" : "array",
+				"items" : {
+					"title" : "FSItems",
+					"properties" : {
+						"storage" : {
+							"type" : "string"
+						}
+					}
+				}
+			};
+			var schema_parser = new schemaParser(json);
+			var forms_created = {};
+			var form_order = [];
+			var root = "FileSystem";
+			var path = "#";
+			schema_parser.__createArrayButton__(json, json.items, root, forms_created, form_order, path);
+			expect(forms_created["FileSystem"] instanceof Button).toBeTruthy();
+			expect($(forms_created["FileSystem"].html).find("button").html()).toEqual("FSItems");
+		});
+
+		it("should not create a button with root as text for the array with self reference", function() {
+			var json = {
+				"items" : {
+					"$ref" : "#"
+				}
+			};
+			var schema_parser = new schemaParser(json, "Self");
+			var forms_created = {};
+			var form_order = [];
+			var root = "Self";
+			var path = "#";
+			schema_parser.__createArrayButton__(json, json.items, root, forms_created, form_order, path);
+			expect(forms_created["Self"]).toBeFalsy();
+			expect(forms_created["Self_self_reference"]).toBeTruthy();
+		});
+	});
+
+	describe("schemaParser __createDynoformStructure__", function() {
+		var json;
+		var schema_parser;
+		var forms_created;
+		var form_order;
+		var root;
+		var path;
+		var dynoform_structure;
+		beforeEach(function() {
+			json = {
+				"$schema" : "http://json-schema.org/draft-04/schema#",
+				"title" : "FileSystem",
+				"type" : "object",
+				"properties" : {
+					"storage" : {
+						"type" : "object",
+						"properties" : {
+							"type" : {
+								"type" : "string"
+							},
+							"remotePath" : {
+								"type" : "string"
+							},
+							"enumField" : {
+								"type" : "string",
+								"enum" : ["1", "2", "3"]
+							}
+						}
+					}
+				}
+			};
+			schema_parser = new schemaParser(json);
+			forms_created = {};
+			form_order = [];
+			root = "FileSystem";
+			path = "#";
+			dynoform_structure = new schemaParser(json).__createDynoformStructure__(json, root, forms_created, form_order, path);
+		});
+		it("should create a dynoform structure with the form name as json root title for a json schema of type object", function() {
+			expect( dynoform_structure instanceof dynoformStructure).toBeTruthy();
+			expect(dynoform_structure.form.name).toEqual("FileSystem");
+		});
+		it("should create a dynoform structure for a property of type object", function() {
+			expect(forms_created["storage"] instanceof dynoformStructure).toBeTruthy();
+		});
+		it("should create a dynoform structure with fields as the properties specified in the schema", function() {
+			expect(forms_created["storage"].fields.length).toEqual(3);
+			expect(forms_created["storage"].fields[0].type).toEqual("text");
+			expect(forms_created["storage"].fields[2].type).toEqual("select");
+		});
+	});
+
+	describe("schemaParser __handleObjectRef__", function() {
+		it("should create a button and add a handler to it by calling __objectRefButtonHandler__", function() {
+			var json = {
+				"$schema" : "http://json-schema.org/draft-04/schema#",
+				"title" : "FileSystem",
+				"type" : "object",
+				"properties" : {
+					"storage" : {
+						"type" : "object",
+						"$ref" : "#/definitions/nfs"
+					}
+				},
+				"definitions" : {
+					"nfs" : {
+						"properties" : {
+							"type" : {
+								"type" : "string"
+							}
+						}
+					}
+				}
+			};
+			var schema_parser = new schemaParser(json, "FileSystem");
+			var root = "storage";
+			var path;
+			spyOn(schema_parser, "__objectRefButtonHandler__");
+			var button = schema_parser.__handleObjectRef__(json.properties.storage, root);
+			expect( button instanceof Button).toBeTruthy();
+			$(button.html).find("button").click();
+			expect(schema_parser.__objectRefButtonHandler__).toHaveBeenCalled();
+		});
+	});
+
+	describe("schemaParser __objectRefButtonHandler__", function() {
+		it("should create the appropriate forms", function() {
+			var json = {
+				"$schema" : "http://json-schema.org/draft-04/schema#",
+				"title" : "FileSystem",
+				"type" : "object",
+				"properties" : {
+					"storage" : {
+						"type" : "object",
+						"$ref" : "#/definitions/nfs"
+					}
+				},
+				"definitions" : {
+					"nfs" : {
+						"properties" : {
+							"type" : {
+								"type" : "string"
+							}
+						}
+					}
+				}
+			};
+			var schema_parser = new schemaParser(json, "FileSystem");
+			var forms_created = {};
+			var form_order = [];
+			var root = "storage";
+			var ref_path_parts = json["properties"]["storage"].$ref.split("/");
+			var next_root = ref_path_parts[ref_path_parts.length - 1];
+			var path = ref_path_parts.slice(ref_path_parts.length - 2, 1);
+			path = path.join("/");
+			var button_div = new Button(root).html;
+			button = $(button_div).find("button");
+			schema_parser.__objectRefButtonHandler__(button, $.Event("click"), ref_path_parts, next_root, path);
+			expect($(button_div).find("input").length).toEqual(1);
+		});
+	});
+
+	describe("schemaParser __processRootName__", function() {
+		var json = {
+			"$schema" : "http://json-schema.org/draft-04/schema#",
+			"title" : "Project|Service",
+			"properties" : {
+				"type" : {
+					"type" : "string"
+				}
+			}
+		};
+		var schema_parser = new schemaParser(json);
+		expect(schema_parser.__processRootName__(schema_parser.root)).toEqual("Project");
+		expect(schema_parser.__processRootName__("Project")).toEqual("Project");
+		expect(schema_parser.__processRootName__("")).toEqual("");
+		expect(function() {
+			schema_parser.__processRootName__(null)
+		}).toThrow(new Error("Field name : null"))
+	});
+
 	describe("schemaParser createForms", function() {
 
-		describe("__initDynoform__", function() {
-			it("should return an instance of dynoformStructure", function() {
-				var _fragment = {
-					"$schema" : "http://json-schema.org/draft-04/schema#",
-					"title" : "FileSystem",
-					"properties" : {
-						"storage" : {
-							"type" : "object",
-							"properties" : {
-								"type" : {
-									"type" : "string"
-								},
-								"remotePath" : {
-									"type" : "string"
-								}
-							}
-						}
-					}
-				};
-				var next_root;
-				var forms_created = {};
-				var form_order = [];
-				path = "#";
-				var schema_parser = new schemaParser(_fragment);
-				var dynoform_structure = schema_parser.__initDynoform__(schema_parser.root, schema_parser.root);
-				expect( dynoform_structure instanceof dynoformStructure).toBeTruthy();
-			});
-		});
-		
-		describe("__detectHeadlessForm__", function(){
-			it("should detect array types that do not have objects as items", function(){
-				
-			});
-		});
-		
-		describe("__arrayButtonHandler__", function(){
-			//function(button_this, e, button, items, next_root, root, path)
-			
-		});
-
-		describe("__createDynoformStructure__", function() {
-			it("should create a dynoformStructure instance with a form and fields specified in the schema", function() {
-				var _fragment = {
-					"$schema" : "http://json-schema.org/draft-04/schema#",
-					"title" : "FileSystem",
-					"properties" : {
-						"storage" : {
-							"type" : "object",
-							"properties" : {
-								"type" : {
-									"type" : "string"
-								},
-								"remotePath" : {
-									"type" : "string"
-								}
-							}
-						}
-					}
-				};
-				root = "FileSystem";
-				var next_root;
-				var forms_created = {};
-				var form_order = [];
-				path = "#";
-				var dynoform_structure = new schemaParser(_fragment).__createDynoformStructure__(_fragment, root, next_root, forms_created, form_order, path);
-				expect( dynoform_structure instanceof dynoformStructure).toBeTruthy();
-				expect(dynoform_structure.form.name).toEqual("FileSystem");
-				expect(forms_created["storage"] instanceof dynoformStructure).toBeTruthy();
-				expect(forms_created["storage"].fields.length).toEqual(2);
-			});
-		});
-
-		describe("schemaParser create dynoform structure for type object without $ref", function() {
-			it("should throw an error if the type is not specified and neither is items or properties defined", function() {
-				var json = {
-					"$schema" : "http://json-schema.org/draft-04/schema#",
-					"title" : "FileSystem",
-					"definitions" : {
-						"nfs" : {
-							"properties" : {
-								"type" : {
-									"type" : "string"
-								}
-							}
-						}
-					}
-				};
-				expect(function() {
-					new schemaParser(json)
-				}).toThrow(new Error("Cannot determine type of form"));
-			});
-			var json;
-			var schema_parser;
-			var forms_created;
-			var form_order;
-			beforeEach(function() {
-				json = {
-					"$schema" : "http://json-schema.org/draft-04/schema#",
-					"title" : "FileSystem",
-					"type" : "object",
-					"properties" : {
-						"storage" : {
-							"type" : "object",
-							"properties" : {
-								"type" : {
-									"type" : "string"
-								},
-								"remotePath" : {
-									"type" : "string"
-								},
-								"enumField" : {
-									"type" : "string",
-									"enum" : ["1", "2", "3"]
-								}
-							}
-						}
-					}
-				};
-				schema_parser = new schemaParser(json);
-				forms_created = {};
-				form_order = [];
-				schema_parser.createForm(schema_parser.root, json, null, forms_created, form_order, "#");
-			});
-			it("should create a dynoform structure with the form name as json root title for a json schema of type object", function() {
-				expect(forms_created["FileSystem"] instanceof dynoformStructure).toBeTruthy();
-				expect(forms_created["FileSystem"].form.name).toEqual("FileSystem");
-			});
-			it("should create a dynoform structure for a property of type object", function() {
-				expect(forms_created["storage"] instanceof dynoformStructure).toBeTruthy();
-			});
-			it("should create a dynoform structure with fields as the properties specified in the schema", function() {
-				expect(forms_created["storage"].fields.length).toEqual(3);
-				expect(forms_created["storage"].fields[0].type).toEqual("text");
-				expect(forms_created["storage"].fields[2].type).toEqual("select");
-			});
-		});
-		describe("schemaParser create button for type object with $ref", function() {
-			it("should create a button for the object referenced by $ref without self reference", function() {
-				var json = {
-					"$schema" : "http://json-schema.org/draft-04/schema#",
-					"title" : "FileSystem",
-					"type" : "object",
-					"properties" : {
-						"storage" : {
-							"$ref" : "#/definitions/nfs"
-						}
-					},
-					"definitions" : {
-						"nfs" : {
-							"properties" : {
-								"type" : {
-									"type" : "string"
-								}
-							}
-						}
-					}
-				};
-				var schema_parser = new schemaParser(json);
-				var forms_created = {};
-				var form_order = [];
-				schema_parser.createForm(schema_parser.root, json, null, forms_created, form_order, "#");
-				expect(forms_created["storage"]).toBeTruthy();
-				expect(forms_created["storage"] instanceof Button).toBeTruthy();
-				expect($(forms_created["storage"].html).find("button").html()).toEqual("storage");
-			});
-			it("should create a button for the object referenced by $ref with self reference", function() {
-				var json = {
-					"$schema" : "http://json-schema.org/draft-04/schema#",
-					"title" : "FileSystem",
-					"type" : "object",
-					"properties" : {
-						"storage" : {
-							"properties" : {
-								"type" : {
-									"type" : "string"
-								}
-							}
-						},
-						"self" : {
-							"$ref" : "#"
-						}
-					}
-				};
-				var schema_parser = new schemaParser(json);
-				var forms_created = {};
-				var form_order = [];
-				schema_parser.createForm(schema_parser.root, json, null, forms_created, form_order, "#");
-				expect(forms_created["self"]).toBeTruthy();
-				expect(forms_created["self"] instanceof Button).toBeTruthy();
-				expect($(forms_created["self"].html).find("button")).toBeTruthy();
-				expect($(forms_created["self"].html).find("button").html()).toEqual("self");
-			});
-		});
-		describe("schemaParser create dynoform structure for type array without $ref", function() {
-			var json;
-			var schema_parser;
-			var forms_created;
-			var form_order;
-			beforeEach(function() {
-				json = {
-					"$schema" : "http://json-schema.org/draft-04/schema#",
-					"title" : "FileSystem",
-					"type" : "array",
-					"items" : {
-						"title" : "FSItems",
+		it("should throw an error if the type is not specified and neither is items or properties defined", function() {
+			var json = {
+				"$schema" : "http://json-schema.org/draft-04/schema#",
+				"title" : "FileSystem",
+				"definitions" : {
+					"nfs" : {
 						"properties" : {
-							"storage" : {
-								"type" : "object",
-								"properties" : {
-									"type" : {
-										"type" : "string"
-									},
-									"remotePath" : {
-										"type" : "string"
-									},
-									"enumField" : {
-										"enum" : ["1", "2", "3"]
-									}
-								}
+							"type" : {
+								"type" : "string"
 							}
 						}
 					}
-				};
-				schema_parser = new schemaParser(json);
-				forms_created = {};
-				form_order = [];
-				schema_parser.createForm(schema_parser.root, json, null, forms_created, form_order, "#");
-			});
-			it("should create a button with the button text as json root title for a json schema of type array", function() {
-				expect(forms_created["FileSystem"] instanceof Button).toBeTruthy();
-			});
+				}
+			};
+			expect(function() {
+				new schemaParser(json)
+			}).toThrow(new Error("Cannot determine type of form"));
 		});
-		describe("schemaParser create button for type object with $ref", function() {
-			it("should create a button for the object referenced by $ref without self reference", function() {
-				var json = {
-					"$schema" : "http://json-schema.org/draft-04/schema#",
-					"title" : "FileSystem",
-					"type" : "object",
-					"properties" : {
-						"storage" : {
-							"items" : {
-								"$ref" : "#/definitions/nfs"
+
+		it("should call __createDynoformStructure__ for object types without $ref", function() {
+			var json = {
+				"$schema" : "http://json-schema.org/draft-04/schema#",
+				"title" : "FileSystem",
+				"type" : "object",
+				"properties" : {
+					"storage" : {
+						"properties" : {
+							"type" : {
+								"type" : "string"
+							}
+						}
+					}
+				}
+			};
+			var schema_parser = new schemaParser(json);
+			var forms_created = {};
+			var form_order = [];
+			spyOn(schema_parser, "__createDynoformStructure__");
+			schema_parser.createForm(schema_parser.root, json, null, forms_created, form_order, "#");
+			expect(schema_parser.__createDynoformStructure__).toHaveBeenCalled();
+		});
+
+		it("should call __handleObjectRef__ for object types with $ref", function() {
+			var json = {
+				"$schema" : "http://json-schema.org/draft-04/schema#",
+				"title" : "FileSystem",
+				"type" : "object",
+				"properties" : {
+					"storage" : {
+						"properties" : {
+							"type" : {
+								"type" : "string"
 							}
 						}
 					},
-					"definitions" : {
-						"nfs" : {
-							"properties" : {
-								"type" : {
-									"type" : "string"
-								}
-							}
-						}
+					"self" : {
+						"$ref" : "#"
 					}
-				};
-				var schema_parser = new schemaParser(json);
-				var forms_created = {};
-				var form_order = [];
-				schema_parser.createForm(schema_parser.root, json, null, forms_created, form_order, "#");
-				expect(forms_created["storage"]).toBeTruthy();
-				expect(forms_created["storage"] instanceof Button).toBeTruthy();
-				expect($(forms_created["storage"].html).find("button").html()).toEqual("storage");
-			});
-			it("should not create a button for the object referenced by $ref with self reference", function() {
-				var json = {
-					"$schema" : "http://json-schema.org/draft-04/schema#",
-					"title" : "FileSystem",
-					"type" : "object",
+				}
+			};
+			var schema_parser = new schemaParser(json);
+			var forms_created = {};
+			var form_order = [];
+			spyOn(schema_parser, "__handleObjectRef__");
+			schema_parser.createForm(schema_parser.root, json, null, forms_created, form_order, "#");
+			expect(schema_parser.__handleObjectRef__).toHaveBeenCalled();
+			//expect(forms_created["self"]).toBeTruthy();
+			//expect(forms_created["self"] instanceof Button).toBeTruthy();
+			//expect($(forms_created["self"].html).find("button")).toBeTruthy();
+			//expect($(forms_created["self"].html).find("button").html()).toEqual("self");
+		});
+
+		it("should call __createArrayButton__", function() {
+			var json = {
+				"$schema" : "http://json-schema.org/draft-04/schema#",
+				"title" : "FileSystem",
+				"type" : "array",
+				"items" : {
+					"title" : "FSItems",
 					"properties" : {
 						"storage" : {
-							"properties" : {
-								"type" : {
-									"type" : "string"
-								}
-							}
-						},
-						"self" : {
-							"items" : {
-								"$ref" : "#"
+							"remotePath" : {
+								"type" : "string"
 							}
 						}
 					}
-				};
-				var schema_parser = new schemaParser(json);
-				var forms_created = {};
-				var form_order = [];
-				schema_parser.createForm(schema_parser.root, json, null, forms_created, form_order, "#");
-				expect(forms_created["self"]).toBeFalsy();
-			});
+				}
+			};
+			var schema_parser = new schemaParser(json);
+			var forms_created = {};
+			var form_order = [];
+			spyOn(schema_parser, "__createArrayButton__");
+			schema_parser.createForm(schema_parser.root, json, null, forms_created, form_order, "#");
+			expect(schema_parser.__createArrayButton__).toHaveBeenCalled();
 		});
 	});
 });

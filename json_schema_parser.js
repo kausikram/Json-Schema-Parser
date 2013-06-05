@@ -93,7 +93,7 @@ schemaParser.prototype = {
 		return type;
 	},
 
-	__arrayButtonHandler__ : function(button_this, e, button, items, next_root, root, path) {
+	__arrayButtonHandler__ : function(button_this, e, items, next_root, root, path) {
 		var me = this;
 		e.preventDefault();
 		var _tiny_fragment = items;
@@ -109,7 +109,7 @@ schemaParser.prototype = {
 			form_order.push(next_root);
 			forms_created[next_root] = parent_dynoform;
 		}
-		me.display(button_this.parentNode, forms_created, form_order, true);
+		me.display($(button_this).parent()[0], forms_created, form_order, true);
 	},
 	
 	__detectHeadlessForm__ : function(_fragment) {
@@ -120,9 +120,10 @@ schemaParser.prototype = {
 		return false;
 	},
 
-	__createArrayButton__ : function(_fragment, items, next_root, root, forms_created, form_order, path) {
+	__createArrayButton__ : function(_fragment, items, root, forms_created, form_order, path) {
 		var button;
 		var me = this;
+		var next_root;
 		var _is_self_reference = false;
 		if (_fragment.items.$ref) {
 			if (path.indexOf(_fragment.items.$ref) != -1)
@@ -139,7 +140,7 @@ schemaParser.prototype = {
 			button = new Button(next_root);
 		}
 		$(button.html.find("button")).on("click", function(e) {
-			me.__arrayButtonHandler__(this, e, button, items, next_root, root, path);
+			me.__arrayButtonHandler__(this, e, items, next_root, root, path);
 		});
 		if (_is_self_reference) {
 			form_order.push(root + "_self_reference");
@@ -150,11 +151,11 @@ schemaParser.prototype = {
 		}
 	},
 
-	__handleObjectRef__ : function(_fragment, next_root, root, path) {
+	__handleObjectRef__ : function(_fragment, root) {
 		var me = this;
 		var ref_path_parts = _fragment.$ref.split("/");
-		next_root = ref_path_parts[ref_path_parts.length - 1];
-		path = ref_path_parts.slice(ref_path_parts.length - 2, 1);
+		var next_root = ref_path_parts[ref_path_parts.length - 1];
+		var path = ref_path_parts.slice(ref_path_parts.length - 2, 1);
 		path = path.join("/");
 		var button = new Button(root);
 		$(button.html.find("button")).on("click", function(e) {
@@ -170,8 +171,8 @@ schemaParser.prototype = {
 		var forms_created = {};
 		var form_order = [];
 		me.createForm(next_root, _tiny_fragment, null, forms_created, form_order, path);
-		me.display(button_this.parentNode, forms_created, form_order, false);
-		button_this.parentNode.children[0].remove();
+		me.display($(button_this).parent()[0], forms_created, form_order, false);
+		$(button_this).parent()[0].children[0].remove();
 	},
 
 	__initDynoform__ : function(root, fieldset_title) {
@@ -182,7 +183,8 @@ schemaParser.prototype = {
 		return dynoform_structure;
 	},
 
-	__createDynoformStructure__ : function(_fragment, root, next_root, forms_created, form_order, path) {
+	__createDynoformStructure__ : function(_fragment, root, forms_created, form_order, path) {
+		var next_root;
 		var dynoform_structure = this.__initDynoform__(root, root);
 		var properties = _fragment.properties;
 		for (var prop in properties) {
@@ -197,6 +199,9 @@ schemaParser.prototype = {
 	//as of now, OS spec sends in fields in a <child> | <parent> format
 	//this function process to extract just the child's name
 	__processRootName__ : function(root) {
+		if (root == null){
+			throw new Error("Field name : null");
+		}
 		var root = root.split("|")[0];
 		return root;
 	},
@@ -227,14 +232,14 @@ schemaParser.prototype = {
 			if (!_fragment.items) {
 				throw new Error("Please check your Schema");
 			}
-			this.__createArrayButton__(_fragment, items, next_root, root, forms_created, form_order, path);
+			this.__createArrayButton__(_fragment, items, root, forms_created, form_order, path);
 		} else if (recognized_type == schemaParser.OBJECT) {
 			if (_fragment.$ref) {
 				form_order.push(root);
-				forms_created[root] = this.__handleObjectRef__(_fragment, next_root, root, path);
+				forms_created[root] = this.__handleObjectRef__(_fragment, root);
 			} else {
 				form_order.push(root);
-				forms_created[root] = this.__createDynoformStructure__(_fragment, root, next_root, forms_created, form_order, path);
+				forms_created[root] = this.__createDynoformStructure__(_fragment, root, forms_created, form_order, path);
 			}
 		} else {
 			var type = recognized_type;
