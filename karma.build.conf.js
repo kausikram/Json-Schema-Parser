@@ -19,7 +19,7 @@ files = [
 ];
 
 preprocessors = {
-  'jquery.dynoform.js': 'coverage'
+  'json_schema_parser.js': 'coverage'
 };
 
 // list of files to exclude
