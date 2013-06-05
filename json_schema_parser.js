@@ -52,7 +52,6 @@ schemaParser.prototype = {
 			json = {};
 
 		this.schema = json;
-		this.root_type = json.type || this.getFormType(json);
 		this.root = form_name || json.title;
 	},
 

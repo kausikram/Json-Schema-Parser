@@ -1,3 +1,73 @@
+describe("Button", function() {
+	it("should return an instance of Button with a button element inside a div", function() {
+		var button = new Button("FileSystem");
+		expect( button instanceof Button).toBeTruthy();
+		expect($(button.html).find("div")).toBeTruthy();
+		expect($(button.html).find("button")).toBeTruthy();
+		expect($(button.html).find("button").html()).toEqual("FileSystem");
+	});
+});
+
+describe("Form", function() {
+	it("should return an instance of Form with the form name set", function() {
+		var form = new Form("FileSystem");
+		expect( form instanceof Form).toBeTruthy();
+		expect(form.name).toEqual("FileSystem");
+	});
+});
+
+describe("Field", function() {
+	var type;
+	var name;
+	var fieldset;
+	beforeEach(function() {
+		type = "string";
+		name = "storage";
+		fieldset = "FSItems";
+	});
+
+	it("should throw an error if the type is not defined", function() {
+		expect(function() {
+			new Field(name)
+		}).toThrow(new Error("Cannot detect type of the field"));
+	});
+
+	it("should return an instance of Field with the type and options set if given", function() {
+		var field = new Field(name, type, fieldset);
+		expect(field.type).toEqual("text");
+		expect( field instanceof Field).toBeTruthy();
+		expect(field.fieldset).toEqual("FSItems");
+	});
+
+	it("should set default fieldset if fieldset is not set", function() {
+		var field = new Field(name, type);
+		expect(field.fieldset).toEqual(schemaParser.FIELDSET);
+	});
+
+	it("should assign options if the enum is true or type is boolean", function() {
+		type = "select";
+		options = ["1", "2", "3"];
+		var field = new Field(name, type, fieldset, options);
+		expect( field instanceof Field).toBeTruthy();
+		expect(field.type).toEqual("select");
+		expect(field.options).toEqual([["1", 0], ["2", 1], ["3", 2]]);
+
+		type = "radio";
+		options = ["true", "false"];
+		field = new Field(name, type, fieldset, options);
+		expect( field instanceof Field).toBeTruthy();
+		expect(field.type).toEqual("radio");
+		expect(field.options).toEqual([["true", 0], ["false", 1]]);
+	});
+});
+
+describe("dynoformStructure", function() {
+	it("should return an instance of dynoformStructure", function() {
+		var dynoform_structure = new dynoformStructure();
+		expect( dynoform_structure instanceof dynoformStructure).toBeTruthy();
+	});
+});
+
 describe("schemaParser", function() {
 	describe("schemaParser init", function() {
 		it("should instantiate an instance of schemaParser", function() {
@@ -12,6 +82,10 @@ describe("schemaParser", function() {
 				}
 			});
 			expect( schema_parser instanceof schemaParser).toBeTruthy();
+		});
+		it("should initialize json to empty dict if schema is not passed", function(){
+			var schema_parser = new schemaParser();
+			expect(schema_parser.schema).toEqual({});
 		});
 	});
 
@@ -40,8 +114,7 @@ describe("schemaParser", function() {
 									"enum" : ["1", "2", "3"]
 								},
 								"booleanField" : {
-									"type" : "boolean",
-									"enum" : ["1", "2", "3"]
+									"type" : "boolean"
 								}
 							}
 						}
@@ -198,6 +271,11 @@ describe("schemaParser", function() {
 			var schema_parser = new schemaParser(_fragment);
 			var dynoform_structure = schema_parser.__initDynoform__(schema_parser.root, schema_parser.root);
 			expect( dynoform_structure instanceof dynoformStructure).toBeTruthy();
+			expect(dynoform_structure.form instanceof Form).toBeTruthy();
+			expect(dynoform_structure.fieldsets).toEqual([[schema_parser.root, schema_parser.root, {}]]);
+
+			dynoform_structure = schema_parser.__initDynoform__(schema_parser.root, "");
+			expect(dynoform_structure.fieldsets).toEqual([["", schema_parser.root, {}]]);
 		});
 	});
 
@@ -431,26 +509,6 @@ describe("schemaParser", function() {
 	});
 
 	describe("schemaParser createForms", function() {
-
-		it("should throw an error if the type is not specified and neither is items or properties defined", function() {
-			var json = {
-				"$schema" : "http://json-schema.org/draft-04/schema#",
-				"title" : "FileSystem",
-				"definitions" : {
-					"nfs" : {
-						"properties" : {
-							"type" : {
-								"type" : "string"
-							}
-						}
-					}
-				}
-			};
-			expect(function() {
-				new schemaParser(json)
-			}).toThrow(new Error("Cannot determine type of form"));
-		});
-
 		it("should call __createDynoformStructure__ for object types without $ref", function() {
 			var json = {
 				"$schema" : "http://json-schema.org/draft-04/schema#",
@@ -526,6 +584,73 @@ describe("schemaParser", function() {
 			spyOn(schema_parser, "__createArrayButton__");
 			schema_parser.createForm(schema_parser.root, json, null, forms_created, form_order, "#");
 			expect(schema_parser.__createArrayButton__).toHaveBeenCalled();
+		});
+
+		it("should throw an error if items is not defined", function() {
+			var json = {
+				"$schema" : "http://json-schema.org/draft-04/schema#",
+				"title" : "FileSystem",
+				"type" : "array",
+				"$ref" : "#"
+			};
+			var schema_parser = new schemaParser(json);
+			var forms_created = {};
+			var form_order = [];
+			expect(function() {
+				schema_parser.createForm("FileSystem", json, null, forms_created, form_order, "#")
+			}).toThrow(new Error("Please check your Schema"));
+
+		});
+
+		it("should create a field and add it to the parent dynoform if the type is not object or array", function() {
+			var json = {
+				"$schema" : "http://json-schema.org/draft-04/schema#",
+				"title" : "FileSystem",
+				"type" : "array",
+				"items" : {
+					"title" : "FSItems",
+					"properties" : {
+						"remotePath" : {
+							"type" : "string"
+						}
+					}
+				}
+			};
+			var schema_parser = new schemaParser(json);
+			var forms_created = {};
+			var form_order = [];
+			var parent_dynoform = schema_parser.__initDynoform__("", "");
+			schema_parser.createForm("remote_path", json.items.properties.remotePath, parent_dynoform, forms_created, form_order, "#");
+			expect(parent_dynoform.fields.length).toEqual(1);
+			expect(parent_dynoform.fields[0].type).toEqual("text");
+			expect(parent_dynoform.fields[0] instanceof Field).toBeTruthy();
+		});
+
+		it("should assign options if the enum is true or type is boolean", function() {
+			var json = {
+				"$schema" : "http://json-schema.org/draft-04/schema#",
+				"title" : "FileSystem",
+				"properties" : {
+					"enumField" : {
+						"enum" : ["1", "2", "3"]
+					},
+					"booleanField" : {
+						"type" : "boolean"
+					}
+				}
+			};
+			var schema_parser = new schemaParser(json);
+			forms_created = {};
+			form_order = [];
+			var parent_dynoform = schema_parser.__initDynoform__("", "");
+			schema_parser.createForm("enumField", json.properties.enumField, parent_dynoform, forms_created, form_order, "#");
+			expect(parent_dynoform.fields[0] instanceof Field).toBeTruthy();
+			expect(parent_dynoform.fields[0].type).toEqual("select");
+			expect(parent_dynoform.fields[0].options).toEqual([["1", 0], ["2", 1], ["3", 2]]);
+			schema_parser.createForm("booleanField", json.properties.booleanField, parent_dynoform, forms_created, form_order, "#");
+			expect(parent_dynoform.fields[1] instanceof Field).toBeTruthy();
+			expect(parent_dynoform.fields[1].type).toEqual("radio");
+			expect(parent_dynoform.fields[1].options).toEqual([["true", 0], ["false", 1]]);
 		});
 	});
 });

@@ -38,6 +38,7 @@ junitReporter = {
 
 coverageReporter = {
   type : 'cobertura',
+  //type : 'html',
   dir : 'coverage/'
 };
 
