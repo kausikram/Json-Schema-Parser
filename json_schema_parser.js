@@ -172,7 +172,7 @@ schemaParser.prototype = {
 		var form_order = [];
 		me.createForm(next_root, _tiny_fragment, null, forms_created, form_order, path);
 		me.display($(button_this).parent()[0], forms_created, form_order, false);
-		$(button_this).parent()[0].children[0].remove();
+		$($(button_this).parent()[0].children[0]).remove();
 	},
 
 	__initDynoform__ : function(root, fieldset_title) {
@@ -264,7 +264,7 @@ schemaParser.prototype = {
 			} else {
 				new_form = forms_created[form_name].html.clone(true);
 			}
-			if (indent) {
+			if (indent) { 
 				new_form.addClass("indent");
 			}
 			$(hook).append(new_form);
