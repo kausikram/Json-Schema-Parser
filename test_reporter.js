@@ -407,6 +407,7 @@ describe("schemaParser", function() {
 			button = $(button_div).find("button");
 			schema_parser.__objectRefButtonHandler__(button, $.Event("click"), ref_path_parts, next_root, path);
 			expect($(button_div).find("input").length).toEqual(1);
+			expect($(button_div).find("button").length).toEqual(0);
 		});
 	});
 
