@@ -459,8 +459,7 @@
 
 	$(document).ready(function() {
 		var json_to_render = test_meta_schema;
-		schema_parser = new SchemaParser(json_to_render, "Project");
-		schema_parser.draw();
+		$("#hello_div").schemaFarm(json_to_render, "Project");
 	})
 </script>
 
