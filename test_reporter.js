@@ -41,7 +41,7 @@ describe("Field", function() {
 
 	it("should set default fieldset if fieldset is not set", function() {
 		var field = new Field(name, type);
-		expect(field.fieldset).toEqual(schemaParser.FIELDSET);
+		expect(field.fieldset).toEqual(SchemaParser.FIELDSET);
 	});
 
 	it("should assign options if the enum is true or type is boolean", function() {
@@ -61,17 +61,17 @@ describe("Field", function() {
 	});
 });
 
-describe("dynoformStructure", function() {
-	it("should return an instance of dynoformStructure", function() {
-		var dynoform_structure = new dynoformStructure();
-		expect( dynoform_structure instanceof dynoformStructure).toBeTruthy();
+describe("DynoformStructure", function() {
+	it("should return an instance of DynoformStructure", function() {
+		var dynoform_structure = new DynoformStructure();
+		expect( dynoform_structure instanceof DynoformStructure).toBeTruthy();
 	});
 });
 
-describe("schemaParser", function() {
-	describe("schemaParser init", function() {
-		it("should instantiate an instance of schemaParser", function() {
-			var schema_parser = new schemaParser({
+describe("SchemaParser", function() {
+	describe("SchemaParser init", function() {
+		it("should instantiate an instance of SchemaParser", function() {
+			var schema_parser = new SchemaParser({
 				"$schema" : "http://json-schema.org/draft-04/schema#",
 				"title" : "FileSystem",
 				"type" : "object",
@@ -81,15 +81,15 @@ describe("schemaParser", function() {
 					}
 				}
 			});
-			expect( schema_parser instanceof schemaParser).toBeTruthy();
+			expect( schema_parser instanceof SchemaParser).toBeTruthy();
 		});
 		it("should initialize json to empty dict if schema is not passed", function(){
-			var schema_parser = new schemaParser();
+			var schema_parser = new SchemaParser();
 			expect(schema_parser.schema).toEqual({});
 		});
 	});
 
-	describe("schemaParser getFormType", function() {
+	describe("SchemaParser getFormType", function() {
 		describe("should return schema specified types", function() {
 			var json;
 			var schema_parser;
@@ -120,7 +120,7 @@ describe("schemaParser", function() {
 						}
 					}
 				};
-				schema_parser = new schemaParser(json);
+				schema_parser = new SchemaParser(json);
 				forms_created = {};
 				form_order = [];
 				prop_path = json["properties"]["storage"]["properties"];
@@ -146,7 +146,7 @@ describe("schemaParser", function() {
 					}
 				}
 			};
-			schema_parser = new schemaParser(json);
+			schema_parser = new SchemaParser(json);
 			forms_created = {};
 			form_order = [];
 			var type = schema_parser.getFormType(json);
@@ -165,7 +165,7 @@ describe("schemaParser", function() {
 					}
 				}
 			};
-			schema_parser = new schemaParser(json);
+			schema_parser = new SchemaParser(json);
 			forms_created = {};
 			form_order = [];
 			var type = schema_parser.getFormType(json);
@@ -191,7 +191,7 @@ describe("schemaParser", function() {
 					}
 				}
 			};
-			schema_parser = new schemaParser(json);
+			schema_parser = new SchemaParser(json);
 			forms_created = {};
 			form_order = [];
 			var type = schema_parser.getFormType(json["properties"]["time"]);
@@ -208,14 +208,14 @@ describe("schemaParser", function() {
 				}
 			};
 
-			var schema_parser = new schemaParser(json);
+			var schema_parser = new SchemaParser(json);
 			expect(function() {
 				schema_parser.getFormType(json.properties.storage)
 			}).toThrow(new Error("Cannot determine type of form"));
 		});
 	});
 
-	describe("schemaParser getRefSchema", function() {
+	describe("SchemaParser getRefSchema", function() {
 		it("should get the schema specified in $ref", function() {
 			var json = {
 				"$schema" : "http://json-schema.org/draft-04/schema#",
@@ -237,7 +237,7 @@ describe("schemaParser", function() {
 					}
 				}
 			};
-			var schema_parser = new schemaParser(json);
+			var schema_parser = new SchemaParser(json);
 			var ref_path_parts = "#/definitions/nfs".split("/");
 			var ref_schema = schema_parser.getRefSchema(ref_path_parts);
 
@@ -253,8 +253,8 @@ describe("schemaParser", function() {
 		});
 	});
 
-	describe("schemaParser __initDynoform__", function() {
-		it("should return an instance of dynoformStructure", function() {
+	describe("SchemaParser __initDynoform__", function() {
+		it("should return an instance of DynoformStructure", function() {
 			var _fragment = {
 				"$schema" : "http://json-schema.org/draft-04/schema#",
 				"title" : "FileSystem",
@@ -268,9 +268,9 @@ describe("schemaParser", function() {
 			var forms_created = {};
 			var form_order = [];
 			path = "#";
-			var schema_parser = new schemaParser(_fragment);
+			var schema_parser = new SchemaParser(_fragment);
 			var dynoform_structure = schema_parser.__initDynoform__(schema_parser.root, schema_parser.root);
-			expect( dynoform_structure instanceof dynoformStructure).toBeTruthy();
+			expect( dynoform_structure instanceof DynoformStructure).toBeTruthy();
 			expect(dynoform_structure.form instanceof Form).toBeTruthy();
 			expect(dynoform_structure.fieldsets).toEqual([[schema_parser.root, schema_parser.root, {}]]);
 
@@ -279,7 +279,7 @@ describe("schemaParser", function() {
 		});
 	});
 
-	describe("schemaParser __detectHeadlessForm__", function() {
+	describe("SchemaParser __detectHeadlessForm__", function() {
 		it("should detect array types that do not have objects as items but a single field", function() {
 			//this is to create dynoforms with no fieldset heading so that only the field is rendered
 			//instead of along with a fieldset heading
@@ -292,12 +292,12 @@ describe("schemaParser", function() {
 				}
 
 			};
-			var _is_headless_form = new schemaParser(json).__detectHeadlessForm__(json.items);
+			var _is_headless_form = new SchemaParser(json).__detectHeadlessForm__(json.items);
 			expect(_is_headless_form).toBeTruthy();
 		});
 	});
 
-	describe("schemaParser __arrayButtonHandler__", function() {
+	describe("SchemaParser __arrayButtonHandler__", function() {
 		it("should create the appropriate forms", function() {
 			var json = {
 				"$schema" : "http://json-schema.org/draft-04/schema#",
@@ -308,7 +308,7 @@ describe("schemaParser", function() {
 				}
 
 			};
-			var schema_parser = new schemaParser(json, "FileSystem");
+			var schema_parser = new SchemaParser(json, "FileSystem");
 			var forms_created = {};
 			var form_order = [];
 
@@ -324,7 +324,7 @@ describe("schemaParser", function() {
 		});
 	});
 
-	describe("schemaParser __createArrayButton__", function() {
+	describe("SchemaParser __createArrayButton__", function() {
 		it("should create a button with the button text as json root title for a json schema of type array", function() {
 			var json = {
 				"$schema" : "http://json-schema.org/draft-04/schema#",
@@ -339,7 +339,7 @@ describe("schemaParser", function() {
 					}
 				}
 			};
-			var schema_parser = new schemaParser(json);
+			var schema_parser = new SchemaParser(json);
 			var forms_created = {};
 			var form_order = [];
 			var root = "FileSystem";
@@ -355,7 +355,7 @@ describe("schemaParser", function() {
 					"$ref" : "#"
 				}
 			};
-			var schema_parser = new schemaParser(json, "Self");
+			var schema_parser = new SchemaParser(json, "Self");
 			var forms_created = {};
 			var form_order = [];
 			var root = "Self";
@@ -366,7 +366,7 @@ describe("schemaParser", function() {
 		});
 	});
 
-	describe("schemaParser __createDynoformStructure__", function() {
+	describe("SchemaParser __createDynoformStructure__", function() {
 		var json;
 		var schema_parser;
 		var forms_created;
@@ -397,19 +397,19 @@ describe("schemaParser", function() {
 					}
 				}
 			};
-			schema_parser = new schemaParser(json);
+			schema_parser = new SchemaParser(json);
 			forms_created = {};
 			form_order = [];
 			root = "FileSystem";
 			path = "#";
-			dynoform_structure = new schemaParser(json).__createDynoformStructure__(json, root, forms_created, form_order, path);
+			dynoform_structure = new SchemaParser(json).__createDynoformStructure__(json, root, forms_created, form_order, path);
 		});
 		it("should create a dynoform structure with the form name as json root title for a json schema of type object", function() {
-			expect( dynoform_structure instanceof dynoformStructure).toBeTruthy();
+			expect( dynoform_structure instanceof DynoformStructure).toBeTruthy();
 			expect(dynoform_structure.form.name).toEqual("FileSystem");
 		});
 		it("should create a dynoform structure for a property of type object", function() {
-			expect(forms_created["storage"] instanceof dynoformStructure).toBeTruthy();
+			expect(forms_created["storage"] instanceof DynoformStructure).toBeTruthy();
 		});
 		it("should create a dynoform structure with fields as the properties specified in the schema", function() {
 			expect(forms_created["storage"].fields.length).toEqual(3);
@@ -418,7 +418,7 @@ describe("schemaParser", function() {
 		});
 	});
 
-	describe("schemaParser __handleObjectRef__", function() {
+	describe("SchemaParser __handleObjectRef__", function() {
 		it("should create a button and add a handler to it by calling __objectRefButtonHandler__", function() {
 			var json = {
 				"$schema" : "http://json-schema.org/draft-04/schema#",
@@ -440,7 +440,7 @@ describe("schemaParser", function() {
 					}
 				}
 			};
-			var schema_parser = new schemaParser(json, "FileSystem");
+			var schema_parser = new SchemaParser(json, "FileSystem");
 			var root = "storage";
 			var path;
 			spyOn(schema_parser, "__objectRefButtonHandler__");
@@ -451,7 +451,7 @@ describe("schemaParser", function() {
 		});
 	});
 
-	describe("schemaParser __objectRefButtonHandler__", function() {
+	describe("SchemaParser __objectRefButtonHandler__", function() {
 		it("should create the appropriate forms", function() {
 			var json = {
 				"$schema" : "http://json-schema.org/draft-04/schema#",
@@ -473,7 +473,7 @@ describe("schemaParser", function() {
 					}
 				}
 			};
-			var schema_parser = new schemaParser(json, "FileSystem");
+			var schema_parser = new SchemaParser(json, "FileSystem");
 			var forms_created = {};
 			var form_order = [];
 			var root = "storage";
@@ -489,7 +489,7 @@ describe("schemaParser", function() {
 		});
 	});
 
-	describe("schemaParser __processRootName__", function() {
+	describe("SchemaParser __processRootName__", function() {
 		var json = {
 			"$schema" : "http://json-schema.org/draft-04/schema#",
 			"title" : "Project|Service",
@@ -499,7 +499,7 @@ describe("schemaParser", function() {
 				}
 			}
 		};
-		var schema_parser = new schemaParser(json);
+		var schema_parser = new SchemaParser(json);
 		expect(schema_parser.__processRootName__(schema_parser.root)).toEqual("Project");
 		expect(schema_parser.__processRootName__("Project")).toEqual("Project");
 		expect(schema_parser.__processRootName__("")).toEqual("");
@@ -508,7 +508,7 @@ describe("schemaParser", function() {
 		}).toThrow(new Error("Field name : null"))
 	});
 
-	describe("schemaParser createForms", function() {
+	describe("SchemaParser createForms", function() {
 		it("should call __createDynoformStructure__ for object types without $ref", function() {
 			var json = {
 				"$schema" : "http://json-schema.org/draft-04/schema#",
@@ -524,7 +524,7 @@ describe("schemaParser", function() {
 					}
 				}
 			};
-			var schema_parser = new schemaParser(json);
+			var schema_parser = new SchemaParser(json);
 			var forms_created = {};
 			var form_order = [];
 			spyOn(schema_parser, "__createDynoformStructure__");
@@ -550,7 +550,7 @@ describe("schemaParser", function() {
 					}
 				}
 			};
-			var schema_parser = new schemaParser(json);
+			var schema_parser = new SchemaParser(json);
 			var forms_created = {};
 			var form_order = [];
 			spyOn(schema_parser, "__handleObjectRef__");
@@ -578,7 +578,7 @@ describe("schemaParser", function() {
 					}
 				}
 			};
-			var schema_parser = new schemaParser(json);
+			var schema_parser = new SchemaParser(json);
 			var forms_created = {};
 			var form_order = [];
 			spyOn(schema_parser, "__createArrayButton__");
@@ -593,7 +593,7 @@ describe("schemaParser", function() {
 				"type" : "array",
 				"$ref" : "#"
 			};
-			var schema_parser = new schemaParser(json);
+			var schema_parser = new SchemaParser(json);
 			var forms_created = {};
 			var form_order = [];
 			expect(function() {
@@ -616,7 +616,7 @@ describe("schemaParser", function() {
 					}
 				}
 			};
-			var schema_parser = new schemaParser(json);
+			var schema_parser = new SchemaParser(json);
 			var forms_created = {};
 			var form_order = [];
 			var parent_dynoform = schema_parser.__initDynoform__("", "");
@@ -639,7 +639,7 @@ describe("schemaParser", function() {
 					}
 				}
 			};
-			var schema_parser = new schemaParser(json);
+			var schema_parser = new SchemaParser(json);
 			forms_created = {};
 			form_order = [];
 			var parent_dynoform = schema_parser.__initDynoform__("", "");

@@ -27,25 +27,25 @@ var Field = function(name, type, fieldset, options) {
 			this.options.push(option_structure);
 		}
 	}
-	this.fieldset = fieldset || schemaParser.FIELDSET;
+	this.fieldset = fieldset || SchemaParser.FIELDSET;
 };
 
-var dynoformStructure = function() {
+var DynoformStructure = function() {
 	this.form = {};
 	this.fields = [];
 	this.buttons = [];
-	this.fieldsets = [["My Form", schemaParser.FIELDSET, {}]];
+	this.fieldsets = [["My Form", SchemaParser.FIELDSET, {}]];
 }
-var schemaParser = function(json, form_name) {
+var SchemaParser = function(json, form_name) {
 	this.init(json, form_name);
 };
 
-schemaParser.ARRAY = "array";
-schemaParser.OBJECT = "object";
-schemaParser.INPUT = "input";
-schemaParser.FIELDSET = "myform";
+SchemaParser.ARRAY = "array";
+SchemaParser.OBJECT = "object";
+SchemaParser.INPUT = "input";
+SchemaParser.FIELDSET = "myform";
 
-schemaParser.prototype = {
+SchemaParser.prototype = {
 	init : function(json, form_name) {
 
 		if ( typeof (json) === "undefined")
@@ -76,9 +76,9 @@ schemaParser.prototype = {
 			return _fragment.type;
 		
 		if (_fragment.items) {
-			type = schemaParser.ARRAY;
+			type = SchemaParser.ARRAY;
 		} else if (_fragment.properties) {
-			type = schemaParser.OBJECT;
+			type = SchemaParser.OBJECT;
 		} else if (_fragment.$ref) {
 			var ref_path_parts = _fragment.$ref.split("/");
 			_fragment = this.getRefSchema(ref_path_parts);
@@ -175,7 +175,7 @@ schemaParser.prototype = {
 	},
 
 	__initDynoform__ : function(root, fieldset_title) {
-		var dynoform_structure = new dynoformStructure();
+		var dynoform_structure = new DynoformStructure();
 		dynoform_structure.form = new Form(root);
 		var new_field_set = [[( typeof (fieldset_title) !== "undefined") ? fieldset_title : root, root, {}]];
 		dynoform_structure.fieldsets = new_field_set;
@@ -233,13 +233,13 @@ schemaParser.prototype = {
 
 		recognized_type = this.getFormType(_fragment);
 
-		if (recognized_type == schemaParser.ARRAY) {
+		if (recognized_type == SchemaParser.ARRAY) {
 			var items;
 			if (!_fragment.items) {
 				throw new Error("Please check your Schema");
 			}
 			this.__createArrayButton__(_fragment, items, root, forms_created, form_order, path);
-		} else if (recognized_type == schemaParser.OBJECT) {
+		} else if (recognized_type == SchemaParser.OBJECT) {
 			if (_fragment.$ref) {
 				form_order.push(root);
 				forms_created[root] = this.__handleObjectRef__(_fragment, root);
@@ -265,7 +265,7 @@ schemaParser.prototype = {
 		for (var i = 0; i < form_order.length; i++) {
 			var new_form;
 			var form_name = form_order[i];
-			if (forms_created[form_name] instanceof dynoformStructure) {
+			if (forms_created[form_name] instanceof DynoformStructure) {
 				new_form = $("<div>").dynoForm(forms_created[form_name]).clone(true);
 			} else {
 				new_form = forms_created[form_name].html.clone(true);
