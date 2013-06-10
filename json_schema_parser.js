@@ -204,6 +204,13 @@ schemaParser.prototype = {
 		var root = root.split("|")[0];
 		return root;
 	},
+	
+	draw : function(){
+		var forms_created = {};
+		var form_order = [];
+		this.createForm(schema_parser.root, schema_parser.schema, null, forms_created, form_order, "#");
+		this.display("#hello_div", forms_created, form_order, false);
+	},
 
 	createForm : function(root, _fragment, parent_dynoform, forms_created, form_order, path) {
 		var next_root;

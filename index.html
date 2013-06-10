@@ -460,10 +460,7 @@
 	$(document).ready(function() {
 		var json_to_render = test_meta_schema;
 		schema_parser = new schemaParser(json_to_render, "Project");
-		var forms_created = {};
-		var form_order = [];
-		schema_parser.createForm(schema_parser.root, json_to_render, null, forms_created, form_order, "#");
-		schema_parser.display("#hello_div", forms_created, form_order, false);
+		schema_parser.draw();
 	})
 </script>
 
